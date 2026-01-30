@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Security App</string>
+    <string name="device_admin_label">Camera Lock Admin</string>
+    <string name="device_admin_description">Required to lock/unlock camera based on location.</string>
+    <string name="scan_entry">Scan Entry QR</string>
+    <string name="scan_exit">Scan Exit QR</string>
+    <string name="settings">Settings</string>
+    <string name="status_label">Status: </string>
+    <string name="device_info_label">Device Info</string>
+    <string name="facility_info_label">Facility Info</string>
+    <string name="camera_permission_required">Camera permission is required to scan QR codes</string>
+    <string name="info_camera_unlocked">Camera is currently unlocked and available for use.</string>
+    <string name="info_camera_locked">Camera is currently locked for security.</string>
+</resources>

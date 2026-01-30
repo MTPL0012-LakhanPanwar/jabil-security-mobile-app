@@ -1,0 +1,7 @@
+com.jabil.securityapp.test.app-jetified-tracing-1.2.0-0 C:\Users\ADMIN\.gradle\caches\8.11.1\transforms\014931e9f2022bd314dbe71e8947eecb\transformed\jetified-tracing-1.2.0\res
+com.jabil.securityapp.test.app-jetified-core-1.5.0-1 C:\Users\ADMIN\.gradle\caches\8.11.1\transforms\bdb9007b65c565f97b1f152aec18f0df\transformed\jetified-core-1.5.0\res
+com.jabil.securityapp.test.app-jetified-annotation-experimental-1.4.1-2 C:\Users\ADMIN\.gradle\caches\8.11.1\transforms\c101f6ff78dfc3e3e3baa668b2e30c24\transformed\jetified-annotation-experimental-1.4.1\res
+com.jabil.securityapp.test.app-androidTest-3 E:\Android\camera-lock-android\app\build\generated\res\resValues\androidTest\debug
+com.jabil.securityapp.test.app-mergeDebugAndroidTestResources-4 E:\Android\camera-lock-android\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
+com.jabil.securityapp.test.app-mergeDebugAndroidTestResources-5 E:\Android\camera-lock-android\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
+com.jabil.securityapp.test.app-debugAndroidTest-6 E:\Android\camera-lock-android\app\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources

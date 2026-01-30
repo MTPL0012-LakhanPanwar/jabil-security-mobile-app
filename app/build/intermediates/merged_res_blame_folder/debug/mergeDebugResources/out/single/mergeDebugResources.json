@@ -1,0 +1,66 @@
+[
+    {
+        "merged": "com.jabil.securityapp-debug-37:/layout_activity_main.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/layout_activity_splash.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/layout/activity_splash.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/drawable_ic_launcher.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/drawable/ic_launcher.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/xml_data_extraction_rules.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/drawable_logo_jabil.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/drawable/logo_jabil.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/drawable_logo_jabil_header.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/drawable/logo_jabil_header.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/drawable_ic_camera_on.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/drawable/ic_camera_on.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/xml_device_admin_receiver.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/xml/device_admin_receiver.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/drawable_ic_logo.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/drawable/ic_logo.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/xml_backup_rules.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/drawable_splash_background.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/drawable/splash_background.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/layout_activity_blocked.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/layout/activity_blocked.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/drawable_ic_camera_off.png.flat",
+        "source": "com.jabil.securityapp-main-39:/drawable/ic_camera_off.png"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-debug-37:/drawable_logo_jabil_splash.xml.flat",
+        "source": "com.jabil.securityapp-main-39:/drawable/logo_jabil_splash.xml"
+    }
+]

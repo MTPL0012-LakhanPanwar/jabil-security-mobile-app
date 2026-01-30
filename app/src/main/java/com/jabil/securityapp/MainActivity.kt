@@ -1,0 +1,698 @@
+package com.jabil.securityapp
+
+import android.Manifest
+import android.app.Activity
+import android.app.ActivityManager
+import android.app.AppOpsManager
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
+import android.view.View
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.jabil.securityapp.api.RetrofitClient
+import com.jabil.securityapp.api.models.DeviceInfo
+import com.jabil.securityapp.api.models.ScanEntryRequest
+import com.jabil.securityapp.api.models.ScanExitRequest
+import com.jabil.securityapp.manager.DeviceAdminManager
+import com.jabil.securityapp.utils.Constants
+import com.jabil.securityapp.utils.DeviceUtils
+import com.jabil.securityapp.utils.PrefsManager
+import com.google.zxing.integration.android.IntentIntegrator
+import com.jabil.securityapp.camera.AnyOrientationCaptureActivity
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
+
+class MainActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+
+    // UI Components
+    private lateinit var tvStatus: TextView
+    private lateinit var tvStatusMessage: TextView
+    private lateinit var ivStatusIcon: ImageView
+    private lateinit var btnScanEntry: Button
+    private lateinit var btnScanExit: Button
+
+    // Managers
+    private lateinit var deviceAdminManager: DeviceAdminManager
+    private lateinit var prefsManager: PrefsManager
+
+    // Current QR scan action
+    private var currentScanAction: ScanAction = ScanAction.NONE
+    private enum class ScanAction { NONE, ENTRY, EXIT }
+
+
+    // ==================== Lifecycle Methods ====================
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Switch back to normal theme from splash theme
+        setTheme(R.style.Theme_CameraLockDemo)
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // Initialize managers
+        deviceAdminManager = DeviceAdminManager(this)
+        prefsManager = PrefsManager(this)
+
+        // Restore state if needed
+        if (prefsManager.isLocked) {
+            // Ensure service is running if it should be locked
+            val serviceIntent = Intent(this, CameraBlockerService::class.java)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+        }
+
+        // Initialize UI
+        initializeViews()
+        setupClickListeners()
+
+        // Update UI
+        updateUI()
+
+        // Check permissions (Camera, Overlay, Usage, Xiaomi)
+        // We do this silently first (or setup listeners), but for this requirement we want to prepare the app.
+        // Calling checkPreScanPermissions() here will trigger dialogs if missing.
+        // That is acceptable as per "ask before QR code".
+        // However, to avoid spamming on rotation, we might want to check if it's a fresh start.
+        if (savedInstanceState == null) {
+            checkAndRequestNextPermission()
+        }
+    }
+
+    private fun showSettingsRedirectDialog(message: String) {
+        AlertDialog.Builder(this)
+            .setTitle("Permission Required")
+            .setMessage(message)
+            .setPositiveButton("Go to Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                val uri = android.net.Uri.fromParts("package", packageName, null)
+                intent.data = uri
+                startActivity(intent)
+            }
+            .setNegativeButton("Exit App") { _, _ -> finish() }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun showCameraRationaleDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Camera Access Required")
+            .setMessage("Jabil Security requires camera access to scan QR codes for Entry and Exit.")
+            .setPositiveButton("Try Again") { _, _ ->
+                isWaitingForPermission = true
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+            .setNegativeButton("Cancel", null) // Stops the flow safely
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun checkAndRequestNextPermission(): Boolean {
+        // 1. Camera - System handled
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (!isWaitingForPermission) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+                    showCameraRationaleDialog()
+                } else {
+                    isWaitingForPermission = true
+                    requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }
+            }
+            return false
+        }
+
+        // 2. Overlay - Only check if we haven't granted it yet AND we haven't flagged it true
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            if (!prefsManager.isOverlayPermit) {
+                showPermissionDialog(
+                    "Overlay Permission Required",
+                    "Step 2: Enable 'Display over other apps' to secure the camera.",
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    "OVERLAY", // Pass the type
+                    android.net.Uri.parse("package:$packageName")
+                )
+                return false
+            }
+        }
+
+        // 3. Usage Stats - Only check if Overlay is done and Usage is not yet flagged
+        if (!hasUsageStatsPermission()) {
+            if (!prefsManager.isUsageStatPermit) {
+                showPermissionDialog(
+                    "Usage Access Required",
+                    "Final Step: Enable 'Usage Access' to detect camera activity.",
+                    Settings.ACTION_USAGE_ACCESS_SETTINGS,
+                    "USAGE" // Pass the type
+                )
+                return false
+            }
+        }
+
+        // 4. Xiaomi - Same logic
+        if (isXiaomi() && !prefsManager.isXiaomiSetupDone) {
+            showXiaomiPermissionDialog()
+            return false
+        }
+
+        return true // All gates passed
+    }
+    // ==================== UI Initialization ====================
+
+    private fun initializeViews() {
+        tvStatus = findViewById(R.id.tvStatus)
+        tvStatusMessage = findViewById(R.id.tvStatusMessage)
+        ivStatusIcon = findViewById(R.id.ivStatusIcon)
+        btnScanEntry = findViewById(R.id.btnScanEntry)
+        btnScanExit = findViewById(R.id.btnScanExit)
+    }
+
+    private fun setupClickListeners() {
+        btnScanEntry.setOnClickListener {
+            val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+
+            if (cameraPermission == PackageManager.PERMISSION_GRANTED) {
+                // Only proceed if ALL other setup is also done
+                if (checkAndRequestNextPermission()) {
+                    currentScanAction = ScanAction.ENTRY
+                    startQRScan()
+                }
+            } else {
+                // Camera is missing. Check if we should show rationale or go to settings.
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+                    showCameraRationaleDialog()
+                } else {
+                    // User likely checked "Don't ask again" or denied twice.
+                    // THIS BREAKS THE LOOP by showing a dialog instead of launching an intent.
+                    showSettingsRedirectDialog("Camera permission is required to scan QR codes. Please enable it in Settings.")
+                }
+            }
+        }
+        btnScanExit.setOnClickListener {
+            // Temporarily unlock camera to allow scanning
+            if (deviceAdminManager.isCameraLocked()) {
+                deviceAdminManager.unlockCamera()
+            }
+
+            if (checkAndRequestNextPermission()) {
+                currentScanAction = ScanAction.EXIT
+                startQRScan()
+            }
+        }
+
+    }
+
+    private fun updateUI() {
+        // Updated logic: Check Hardware Lock, Service Lock, AND Persistent Intent
+        val isHardwareLocked = deviceAdminManager.isCameraLocked()
+        val isServiceLocked = isServiceRunning()
+        val isPersistentlyLocked = prefsManager.isLocked
+
+        val isLocked = isHardwareLocked || isServiceLocked || isPersistentlyLocked
+        val isAdmin = deviceAdminManager.isDeviceAdminActive()
+
+        // Colors
+        val colorLocked = ContextCompat.getColor(this, R.color.state_locked)
+        val colorUnlocked = ContextCompat.getColor(this, R.color.state_unlocked)
+
+        if (isLocked) {
+            // LOCKED STATE
+            tvStatus.text = "LOCKED"
+            tvStatus.setTextColor(colorLocked)
+            ivStatusIcon.setColorFilter(colorLocked)
+            ivStatusIcon.setImageResource(R.drawable.ic_camera_off)
+            tvStatusMessage.text = if (isServiceLocked && !isHardwareLocked) {
+                getString(R.string.info_camera_locked) + "\n(Service Mode Active)"
+            } else {
+                getString(R.string.info_camera_locked)
+            }
+
+            btnScanEntry.visibility = View.GONE
+            btnScanExit.visibility = View.VISIBLE
+        } else {
+            // UNLOCKED STATE
+            tvStatus.text = "UNLOCKED"
+            tvStatus.setTextColor(colorUnlocked)
+            ivStatusIcon.setColorFilter(colorUnlocked)
+            ivStatusIcon.setImageResource(R.drawable.ic_camera_on)
+            tvStatusMessage.text = getString(R.string.info_camera_unlocked)
+
+            btnScanEntry.visibility = View.VISIBLE
+            btnScanExit.visibility = View.GONE
+        }
+
+        // Debug info if needed
+        Log.d(TAG, "UI Updated: Locked=$isLocked (HW=$isHardwareLocked, SVC=$isServiceLocked), Admin=$isAdmin")
+    }
+    
+    private fun isServiceRunning(): Boolean {
+        return try {
+            val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val services = activityManager.getRunningServices(Integer.MAX_VALUE)
+            for (service in services) {
+                if (service.service.className == "com.example.cameralockdemo.CameraBlockerService") {
+                    return true
+                }
+            }
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking service status", e)
+            false
+        }
+    }
+
+
+    // ==================== Camera Permission ====================
+
+    // In Camera Launcher
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        // Doesn't matter if granted or denied here, checkAndRequest will handle the logic
+        checkAndRequestNextPermission()
+    }
+
+    private fun isXiaomi(): Boolean {
+        return "xiaomi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) ||
+                "redmi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) ||
+                "poco".equals(android.os.Build.MANUFACTURER, ignoreCase = true)
+    }
+
+    private fun showXiaomiPermissionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Xiaomi Device Setup")
+            .setMessage("On Xiaomi/Redmi devices, you MUST enable:\n\n1. Autostart\n2. Display pop-up windows while running in the background\n\nOtherwise the camera block will NOT work.")
+            .setPositiveButton("Go to Settings") { _, _ ->
+                prefsManager.isXiaomiSetupDone = true
+                try {
+                    // Try to open specific permission editor
+                    val intent = Intent("miui.intent.action.APP_PERM_EDITOR")
+                    intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+                    intent.putExtra("extra_pkg_name", packageName)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    try {
+                        // Fallback to Application Details
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = android.net.Uri.parse("package:$packageName")
+                        startActivity(intent)
+                    } catch (e2: Exception) {
+                        Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun showPermissionDialog(
+        title: String,
+        message: String,
+        action: String,
+        permissionType: String, // Add this to identify which one to flip
+        data: android.net.Uri? = null
+    ) {
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Grant") { _, _ ->
+                // Mark the permission as "Attempted/Accepted" immediately
+                if (permissionType == "OVERLAY") prefsManager.isOverlayPermit = true
+                if (permissionType == "USAGE") prefsManager.isUsageStatPermit = true
+
+                isWaitingForPermission = true
+                val intent = Intent(action)
+                if (data != null) intent.data = data
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                isWaitingForPermission = false
+            }
+            .setCancelable(false) // Better for a setup flow
+            .show()
+    }
+    // Resume flow helper
+    private var isWaitingForPermission = false
+
+    override fun onResume() {
+        super.onResume()
+        updateUI()
+
+        if (isWaitingForPermission) {
+            isWaitingForPermission = false
+            checkAndRequestNextPermission() // Moves to the next permission in the list
+        }
+    }
+    private fun startQRScan() {
+        val integrator = IntentIntegrator(this)
+        integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+        integrator.setPrompt("Scan ${if (currentScanAction == ScanAction.ENTRY) "Entry" else "Exit"} QR Code")
+        // Remove setCameraId(0) to allow default selection (fixes some device issues)
+        // integrator.setCameraId(0)
+        integrator.setBeepEnabled(true)
+        integrator.setBarcodeImageEnabled(false)
+        integrator.setOrientationLocked(false) // Fixes some orientation/init issues
+        integrator.setCaptureActivity(AnyOrientationCaptureActivity::class.java) // See step 3
+        integrator.initiateScan()
+    }
+
+    // Handle QR Scan Result
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        // Handle QR Result
+        val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
+        if (result != null) {
+            if (result.contents != null) {
+                handleScanResult(result.contents)
+            } else {
+                Toast.makeText(this, "Scan Cancelled", Toast.LENGTH_SHORT).show()
+
+                // Re-lock if cancelled during Exit flow
+                if (currentScanAction == ScanAction.EXIT) {
+                    deviceAdminManager.lockCamera()
+                    updateUI()
+                }
+            }
+            return
+        }
+
+        // Handle Device Admin Result
+        if (requestCode == Constants.DEVICE_ADMIN_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK || deviceAdminManager.isDeviceAdminActive()) {
+                // Admin granted, lock camera
+                lockCamera()
+            } else {
+                Toast.makeText(this, "Device admin permission denied", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private fun handleScanResult(qrContent: String) {
+        // Show loading state
+        setLoading(true)
+
+        lifecycleScope.launch {
+            try {
+                when (currentScanAction) {
+                    ScanAction.ENTRY -> processEntryScan(qrContent)
+                    ScanAction.EXIT -> processExitScan(qrContent)
+                    else -> {}
+                }
+                updateUI()
+            } catch (e: Exception) {
+                handleApiError(e)
+            } finally {
+                setLoading(false)
+                currentScanAction = ScanAction.NONE
+                updateUI()
+            }
+        }
+    }
+
+    private suspend fun processEntryScan(token: String) {
+        val deviceId = DeviceUtils.getDeviceId(this)
+        val deviceInfo = DeviceInfo(
+            manufacturer = android.os.Build.MANUFACTURER,
+            model = android.os.Build.MODEL,
+            osVersion = android.os.Build.VERSION.RELEASE,
+            platform = "android",
+            appVersion = Constants.APP_VERSION,
+            deviceName = android.os.Build.DEVICE
+        )
+
+        val request = ScanEntryRequest(
+            token = token,
+            deviceId = deviceId,
+            deviceInfo = deviceInfo
+        )
+
+        val response = RetrofitClient.apiService.scanEntry(request)
+
+        if (response.isSuccessful && response.body()?.status == "success") {
+            // API validated -> Request Admin / Lock
+            requestDeviceAdmin()
+        } else {
+            showErrorDialog(response.body()?.message ?: "Entry failed. Please try again.")
+        }
+    }
+
+    private suspend fun processExitScan(token: String) {
+        val deviceId = DeviceUtils.getDeviceId(this)
+
+        val request = ScanExitRequest(
+            token = token,
+            deviceId = deviceId
+        )
+
+        val response = RetrofitClient.apiService.scanExit(request)
+
+        if (response.isSuccessful && response.body()?.status == "success") {
+            // API validated -> Unlock
+            unlockAndRemoveAdmin()
+        } else {
+            showErrorDialog(response.body()?.message ?: "Exit failed. Please try again.")
+            // Validation failed, re-lock
+            deviceAdminManager.lockCamera()
+            updateUI()
+        }
+    }
+
+    private fun handleApiError(e: Exception) {
+        val message = when (e) {
+            is IOException -> Constants.ERROR_NO_INTERNET
+            is HttpException -> "Server error: ${e.code()}"
+            else -> e.message ?: "Unknown error occurred"
+        }
+        showErrorDialog(message)
+
+        // If error occurred during Exit, re-lock
+        if (currentScanAction == ScanAction.EXIT) {
+            deviceAdminManager.lockCamera()
+            updateUI()
+        }
+    }
+    private fun setLoading(isLoading: Boolean) {
+        btnScanEntry.isEnabled = !isLoading
+        btnScanExit.isEnabled = !isLoading
+        if (isLoading) {
+            tvStatusMessage.text = "Processing..."
+        } else {
+            // Restore status text based on current state
+            updateUI()
+        }
+    }
+
+
+    // ==================== Business Logic ====================
+
+    private fun requestDeviceAdmin() {
+        // Only handle Device Admin here. Other permissions are handled pre-scan.
+        if (!deviceAdminManager.isDeviceAdminActive()) {
+            val intent = deviceAdminManager.requestDeviceAdminPermission()
+            startActivityForResult(intent, Constants.DEVICE_ADMIN_REQUEST_CODE)
+        } else {
+            // Already admin, just lock
+            lockCamera()
+        }
+    }
+
+    private fun hasUsageStatsPermission(): Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(),
+                packageName
+            )
+        } else {
+            appOps.checkOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(),
+                packageName
+            )
+        }
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun lockCamera() {
+        // Persist lock state
+        prefsManager.isLocked = true
+
+        // Check if this is MIUI Android 14+ device
+        val isMiui14Plus = isMiuiDevice() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+        
+        Log.d(TAG, "Locking camera - MIUI 14+: $isMiui14Plus")
+
+        if (isMiui14Plus) {
+            // MIUI Android 14+ specific approach
+            lockCameraMiui14Plus()
+        } else {
+            // Standard approach for all other devices
+            lockCameraStandard()
+        }
+
+        showSuccessDialog("Camera Locked", if (isMiui14Plus) {
+            Constants.SUCCESS_CAMERA_LOCKED + "\n(Active via MIUI 14+ Enhanced Blocking)"
+        } else {
+            Constants.SUCCESS_CAMERA_LOCKED + "\n(Active via Service & Admin)"
+        })
+        updateUI()
+    }
+    
+    private fun lockCameraStandard() {
+        // 1. Try Hardware Lock (Legacy)
+        var hardwareLockSuccess = false
+        try {
+            hardwareLockSuccess = deviceAdminManager.lockCamera()
+        } catch (e: Exception) {
+            Log.e(TAG, "Hardware lock failed", e)
+        }
+
+        // 2. Start Software Lock (Service) - Always start this as backup/primary
+        try {
+            val serviceIntent = Intent(this, CameraBlockerService::class.java)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start blocker service", e)
+        }
+    }
+    
+    private fun lockCameraMiui14Plus() {
+        Log.d(TAG, "Using MIUI 14+ specific camera locking approach")
+        
+        // 1. Try Hardware Lock (may not work but try anyway)
+        try {
+            deviceAdminManager.lockCamera()
+            Log.d(TAG, "MIUI 14+: Hardware lock attempted")
+        } catch (e: Exception) {
+            Log.e(TAG, "MIUI 14+: Hardware lock failed (expected)", e)
+        }
+
+        // 2. Start Enhanced Software Lock with MIUI 14+ specific flags
+        try {
+            val serviceIntent = Intent(this, CameraBlockerService::class.java)
+            serviceIntent.putExtra("IS_MIUI_14_PLUS", true)
+            serviceIntent.putExtra("USE_AGGRESSIVE_BLOCKING", true)
+            
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+            
+            Log.d(TAG, "MIUI 14+: Enhanced blocker service started")
+        } catch (e: Exception) {
+            Log.e(TAG, "MIUI 14+: Failed to start enhanced blocker service", e)
+        }
+        
+        // 3. Additional MIUI 14+ specific setup
+        setupMiui14PlusBlocking()
+    }
+    
+    private fun isMiuiDevice(): Boolean {
+        return try {
+            val manufacturer = android.os.Build.MANUFACTURER.lowercase()
+            val brand = android.os.Build.BRAND.lowercase()
+            
+            manufacturer.contains("xiaomi") || 
+            manufacturer.contains("redmi") ||
+            brand.contains("xiaomi") || 
+            brand.contains("redmi") ||
+            brand.contains("mi")
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private fun setupMiui14PlusBlocking() {
+        Log.d(TAG, "Setting up MIUI 14+ specific blocking mechanisms")
+        
+        try {
+            // Request additional permissions that might help with MIUI 14+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // Try to get usage stats permission if not already granted
+                if (!hasUsageStatsPermission()) {
+                    Log.w(TAG, "MIUI 14+: Usage stats permission not granted - blocking may be less effective")
+                }
+                
+                // Log MIUI version for debugging
+                try {
+                    val miuiVersion = Class.forName("android.os.SystemProperties")
+                        .getMethod("get", String::class.java)
+                        .invoke(null, "ro.miui.ui.version.name") as? String
+                    Log.d(TAG, "MIUI 14+: Detected MIUI version: $miuiVersion")
+                } catch (e: Exception) {
+                    Log.d(TAG, "MIUI 14+: Could not detect MIUI version")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "MIUI 14+: Setup failed", e)
+        }
+    }
+
+    private fun unlockAndRemoveAdmin() {
+        // Clear lock state
+        prefsManager.isLocked = false
+
+        // 1. Stop Software Lock (Service)
+        stopService(Intent(this, CameraBlockerService::class.java))
+
+        // 2. Unlock Hardware
+        if (deviceAdminManager.unlockCamera()) {
+            // Try to remove admin
+            if (deviceAdminManager.removeDeviceAdmin()) {
+                showSuccessDialog("Camera Unlocked", Constants.SUCCESS_CAMERA_UNLOCKED)
+            } else {
+                showSuccessDialog("Camera Unlocked", "You are checked out. Please manually remove device admin permission if prompted.")
+            }
+            updateUI()
+        } else {
+            // Even if hardware unlock fails (maybe it wasn't locked), we stopped the service, so we are good.
+            showSuccessDialog("Camera Unlocked", Constants.SUCCESS_CAMERA_UNLOCKED)
+            updateUI()
+        }
+    }
+
+
+    private fun showSuccessDialog(title: String, message: String) {
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .setIcon(R.drawable.logo_jabil)
+            .show()
+    }
+
+    private fun showErrorDialog(message: String) {
+        AlertDialog.Builder(this)
+            .setTitle("Error")
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .setIcon(android.R.drawable.ic_dialog_alert)
+            .show()
+    }
+}

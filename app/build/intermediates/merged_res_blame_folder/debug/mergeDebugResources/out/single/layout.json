@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "com.jabil.securityapp-mergeDebugResources-36:/layout/activity_blocked.xml",
+        "source": "com.jabil.securityapp-main-39:/layout/activity_blocked.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-mergeDebugResources-36:/layout/activity_main.xml",
+        "source": "com.jabil.securityapp-main-39:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.jabil.securityapp-mergeDebugResources-36:/layout/activity_splash.xml",
+        "source": "com.jabil.securityapp-main-39:/layout/activity_splash.xml"
+    }
+]

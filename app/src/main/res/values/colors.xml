@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand Colors -->
+    <color name="brand_primary">#1A237E</color> <!-- Deep Indigo -->
+    <color name="brand_secondary">#00B0FF</color> <!-- Light Blue -->
+    <color name="brand_background">#F5F7FA</color>
+    
+    <!-- State Colors -->
+    <color name="state_locked">#D32F2F</color> <!-- Red -->
+    <color name="state_unlocked">#388E3C</color> <!-- Green -->
+    <color name="state_warning">#FFA000</color> <!-- Amber -->
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_white">#FFFFFF</color>
+    
+    <!-- UI Elements -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="divider">#BDBDBD</color>
+    
+    <!-- Legacy Mappings (keeping to avoid breaking existing refs if any) -->
+    <color name="purple_200">@color/brand_secondary</color>
+    <color name="purple_500">@color/brand_primary</color>
+    <color name="purple_700">#0D47A1</color>
+    <color name="teal_200">@color/brand_secondary</color>
+    <color name="teal_700">#0091EA</color>
+    <color name="black">@color/text_primary</color>
+    <color name="white">@color/text_white</color>
+</resources>

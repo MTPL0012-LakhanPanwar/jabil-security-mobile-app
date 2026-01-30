@@ -1,0 +1,159 @@
+package com.jabil.securityapp.utils
+
+import android.content.Context
+import android.content.SharedPreferences
+import android.os.Build
+import android.provider.Settings
+import com.jabil.securityapp.api.models.DeviceInfo
+import java.util.*
+
+/**
+ * Device Utilities
+ * Helper functions for getting device information
+ */
+object DeviceUtils {
+    
+    /**
+     * Generate or retrieve unique device ID
+     */
+    fun getDeviceId(context: Context): String {
+        val prefs = PreferencesManager.getInstance(context)
+        
+        // Check if device ID already exists
+        var deviceId = prefs.getDeviceId()
+        
+        if (deviceId.isEmpty()) {
+            // Generate new device ID
+            deviceId = try {
+                // Try to get Android ID (unique per device)
+                Settings.Secure.getString(
+                    context.contentResolver,
+                    Settings.Secure.ANDROID_ID
+                ) ?: UUID.randomUUID().toString()
+            } catch (e: Exception) {
+                // Fallback to random UUID
+                UUID.randomUUID().toString()
+            }
+            
+            // Save device ID
+            prefs.setDeviceId(deviceId)
+        }
+        
+        return deviceId
+    }
+    
+    
+    /**
+     * Get complete device information
+     */
+    fun getDeviceInfo(context: Context): DeviceInfo {
+        return DeviceInfo(
+            manufacturer = Build.MANUFACTURER,
+            model = Build.MODEL,
+            osVersion = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+            platform = Constants.PLATFORM,
+            appVersion = Constants.APP_VERSION,
+            deviceName = "${Build.MANUFACTURER} ${Build.MODEL}"
+        )
+    }
+    
+    
+    /**
+     * Get device description for display
+     */
+    fun getDeviceDescription(): String {
+        return "${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})"
+    }
+}
+
+
+/**
+ * Preferences Manager
+ * Manages SharedPreferences for storing app data
+ */
+class PreferencesManager private constructor(context: Context) {
+    
+    companion object {
+        @Volatile
+        private var instance: PreferencesManager? = null
+        
+        fun getInstance(context: Context): PreferencesManager {
+            return instance ?: synchronized(this) {
+                instance ?: PreferencesManager(context.applicationContext).also {
+                    instance = it
+                }
+            }
+        }
+    }
+    
+    private val prefs: SharedPreferences = context.getSharedPreferences(
+        Constants.PREFS_NAME,
+        Context.MODE_PRIVATE
+    )
+    
+    
+    // ==================== Device ID ====================
+    
+    fun getDeviceId(): String {
+        return prefs.getString(Constants.KEY_DEVICE_ID, "") ?: ""
+    }
+    
+    fun setDeviceId(deviceId: String) {
+        prefs.edit().putString(Constants.KEY_DEVICE_ID, deviceId).apply()
+    }
+    
+    
+    // ==================== Enrollment Status ====================
+    
+    fun isEnrolled(): Boolean {
+        return prefs.getBoolean(Constants.KEY_IS_ENROLLED, false)
+    }
+    
+    fun setEnrolled(enrolled: Boolean) {
+        prefs.edit().putBoolean(Constants.KEY_IS_ENROLLED, enrolled).apply()
+    }
+    
+    
+    // ==================== Enrollment Details ====================
+    
+    fun getEnrollmentId(): String {
+        return prefs.getString(Constants.KEY_ENROLLMENT_ID, "") ?: ""
+    }
+    
+    fun setEnrollmentId(enrollmentId: String) {
+        prefs.edit().putString(Constants.KEY_ENROLLMENT_ID, enrollmentId).apply()
+    }
+    
+    fun getFacilityName(): String {
+        return prefs.getString(Constants.KEY_FACILITY_NAME, "") ?: ""
+    }
+    
+    fun setFacilityName(facilityName: String) {
+        prefs.edit().putString(Constants.KEY_FACILITY_NAME, facilityName).apply()
+    }
+    
+    fun getEnrolledAt(): String {
+        return prefs.getString(Constants.KEY_ENROLLED_AT, "") ?: ""
+    }
+    
+    fun setEnrolledAt(enrolledAt: String) {
+        prefs.edit().putString(Constants.KEY_ENROLLED_AT, enrolledAt).apply()
+    }
+    
+    
+    // ==================== Clear Data ====================
+    
+    fun clearEnrollmentData() {
+        prefs.edit().apply {
+            putBoolean(Constants.KEY_IS_ENROLLED, false)
+            putString(Constants.KEY_ENROLLMENT_ID, "")
+            putString(Constants.KEY_FACILITY_NAME, "")
+            putString(Constants.KEY_ENROLLED_AT, "")
+            apply()
+        }
+    }
+    
+    fun clearAll() {
+        prefs.edit().clear().apply()
+    }
+}
