@@ -1,3 +1,0 @@
-com.jabil.securityapp.test
-style WhiteBackgroundDialogTheme
-style WhiteBackgroundTheme
