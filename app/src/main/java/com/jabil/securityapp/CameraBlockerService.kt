@@ -153,7 +153,7 @@ class CameraBlockerService : Service() {
         var currentApp = ""
 
         // Strategy 1: Usage Events (Precise)
-        val events = usageStatsManager.queryEvents(time - 2000, time) // 2 seconds window
+        val events = usageStatsManager.queryEvents(time - 1000, time) // 2 seconds window
         val event = android.app.usage.UsageEvents.Event()
 
         while (events.hasNextEvent()) {
@@ -293,7 +293,7 @@ class CameraBlockerService : Service() {
         val time = System.currentTimeMillis()
 
         // 1. Check Events (Fast & Accurate)
-        val events = usageStatsManager.queryEvents(time - 2000, time)
+        val events = usageStatsManager.queryEvents(time - 1000, time)
         val event = android.app.usage.UsageEvents.Event()
         var lastForegroundApp = ""
         while (events.hasNextEvent()) {

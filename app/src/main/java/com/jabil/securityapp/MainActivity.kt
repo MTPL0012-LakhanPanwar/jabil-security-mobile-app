@@ -154,7 +154,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 3. Usage Stats - Only check if Overlay is done and Usage is not yet flagged
+        // 3. Usage Stats - Only check if Overlay is done and Usage is  not yet flagged
         if (!hasUsageStatsPermission()) {
             if (!prefsManager.isUsageStatPermit) {
                 showPermissionDialog(
