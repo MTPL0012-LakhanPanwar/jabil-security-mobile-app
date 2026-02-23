@@ -1,13 +1,14 @@
-package com.jabil.securityapp
+package com.jabil.securityapp.activity
 
 import android.app.ActivityManager
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import com.jabil.securityapp.R
 
 class BlockedActivity : AppCompatActivity() {
 
@@ -56,12 +57,12 @@ class BlockedActivity : AppCompatActivity() {
 
         // Set system UI visibility for immersive experience
         window.decorView.systemUiVisibility = (
-                android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-                        android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                        android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                        android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                        android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                        android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                        View.SYSTEM_UI_FLAG_FULLSCREEN
                 )
 
         // Make the activity show over everything (if used as an overlay activity)
@@ -85,8 +86,8 @@ class BlockedActivity : AppCompatActivity() {
 
     private fun isMiuiDevice(): Boolean {
         return try {
-            val manufacturer = android.os.Build.MANUFACTURER.lowercase()
-            val brand = android.os.Build.BRAND.lowercase()
+            val manufacturer = Build.MANUFACTURER.lowercase()
+            val brand = Build.BRAND.lowercase()
 
             manufacturer.contains("xiaomi") ||
                     manufacturer.contains("redmi") ||
@@ -113,7 +114,7 @@ class BlockedActivity : AppCompatActivity() {
         // Force bring to front for MIUI devices
         if (isMiuiDevice() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             try {
-                val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
                 val taskList = activityManager.getRunningTasks(10)
 
                 for (task in taskList) {

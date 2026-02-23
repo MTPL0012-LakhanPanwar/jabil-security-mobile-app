@@ -1,14 +1,14 @@
-package com.jabil.securityapp
+package com.jabil.securityapp.activity
 
 import android.Manifest
-import android.app.Activity
 import android.app.ActivityManager
 import android.app.AppOpsManager
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import android.provider.Settings
 import android.util.Log
 import android.view.View
@@ -22,16 +22,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.zxing.integration.android.IntentIntegrator
+import com.jabil.securityapp.CameraBlockerService
+import com.jabil.securityapp.R
 import com.jabil.securityapp.api.RetrofitClient
 import com.jabil.securityapp.api.models.DeviceInfo
 import com.jabil.securityapp.api.models.ScanEntryRequest
 import com.jabil.securityapp.api.models.ScanExitRequest
+import com.jabil.securityapp.camera.AnyOrientationCaptureActivity
 import com.jabil.securityapp.manager.DeviceAdminManager
 import com.jabil.securityapp.utils.Constants
 import com.jabil.securityapp.utils.DeviceUtils
 import com.jabil.securityapp.utils.PrefsManager
-import com.google.zxing.integration.android.IntentIntegrator
-import com.jabil.securityapp.camera.AnyOrientationCaptureActivity
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -74,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         if (prefsManager.isLocked) {
             // Ensure service is running if it should be locked
             val serviceIntent = Intent(this, CameraBlockerService::class.java)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
             } else {
                 startService(serviceIntent)
@@ -104,7 +106,7 @@ class MainActivity : AppCompatActivity() {
             .setMessage(message)
             .setPositiveButton("Go to Settings") { _, _ ->
                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                val uri = android.net.Uri.fromParts("package", packageName, null)
+                val uri = Uri.fromParts("package", packageName, null)
                 intent.data = uri
                 startActivity(intent)
             }
@@ -148,7 +150,7 @@ class MainActivity : AppCompatActivity() {
                     "Step 2: Enable 'Display over other apps' to secure the camera.",
                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                     "OVERLAY", // Pass the type
-                    android.net.Uri.parse("package:$packageName")
+                    Uri.parse("package:$packageName")
                 )
                 return false
             }
@@ -262,10 +264,10 @@ class MainActivity : AppCompatActivity() {
         // Debug info if needed
         Log.d(TAG, "UI Updated: Locked=$isLocked (HW=$isHardwareLocked, SVC=$isServiceLocked), Admin=$isAdmin")
     }
-    
+
     private fun isServiceRunning(): Boolean {
         return try {
-            val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
             val services = activityManager.getRunningServices(Integer.MAX_VALUE)
             for (service in services) {
                 if (service.service.className == "com.example.cameralockdemo.CameraBlockerService") {
@@ -291,9 +293,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isXiaomi(): Boolean {
-        return "xiaomi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) ||
-                "redmi".equals(android.os.Build.MANUFACTURER, ignoreCase = true) ||
-                "poco".equals(android.os.Build.MANUFACTURER, ignoreCase = true)
+        return "xiaomi".equals(Build.MANUFACTURER, ignoreCase = true) ||
+                "redmi".equals(Build.MANUFACTURER, ignoreCase = true) ||
+                "poco".equals(Build.MANUFACTURER, ignoreCase = true)
     }
 
     private fun showXiaomiPermissionDialog() {
@@ -312,7 +314,7 @@ class MainActivity : AppCompatActivity() {
                     try {
                         // Fallback to Application Details
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                        intent.data = android.net.Uri.parse("package:$packageName")
+                        intent.data = Uri.parse("package:$packageName")
                         startActivity(intent)
                     } catch (e2: Exception) {
                         Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
@@ -328,7 +330,7 @@ class MainActivity : AppCompatActivity() {
         message: String,
         action: String,
         permissionType: String, // Add this to identify which one to flip
-        data: android.net.Uri? = null
+        data: Uri? = null
     ) {
         AlertDialog.Builder(this)
             .setTitle(title)
@@ -395,7 +397,7 @@ class MainActivity : AppCompatActivity() {
 
         // Handle Device Admin Result
         if (requestCode == Constants.DEVICE_ADMIN_REQUEST_CODE) {
-            if (resultCode == Activity.RESULT_OK || deviceAdminManager.isDeviceAdminActive()) {
+            if (resultCode == RESULT_OK || deviceAdminManager.isDeviceAdminActive()) {
                 // Admin granted, lock camera
                 lockCamera()
             } else {
@@ -432,12 +434,12 @@ class MainActivity : AppCompatActivity() {
     private suspend fun processEntryScan(token: String) {
         val deviceId = DeviceUtils.getDeviceId(this)
         val deviceInfo = DeviceInfo(
-            manufacturer = android.os.Build.MANUFACTURER,
-            model = android.os.Build.MODEL,
-            osVersion = android.os.Build.VERSION.RELEASE,
+            manufacturer = Build.MANUFACTURER,
+            model = Build.MODEL,
+            osVersion = Build.VERSION.RELEASE,
             platform = "android",
             appVersion = Constants.APP_VERSION,
-            deviceName = android.os.Build.DEVICE
+            deviceName = Build.DEVICE
         )
 
         val request = ScanEntryRequest(
@@ -517,17 +519,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hasUsageStatsPermission(): Boolean {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
         val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             appOps.unsafeCheckOpNoThrow(
                 AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
+                Process.myUid(),
                 packageName
             )
         } else {
             appOps.checkOpNoThrow(
                 AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
+                Process.myUid(),
                 packageName
             )
         }
@@ -540,7 +542,7 @@ class MainActivity : AppCompatActivity() {
 
         // Check if this is MIUI Android 14+ device
         val isMiui14Plus = isMiuiDevice() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-        
+
         Log.d(TAG, "Locking camera - MIUI 14+: $isMiui14Plus")
 
         if (isMiui14Plus) {
@@ -558,7 +560,7 @@ class MainActivity : AppCompatActivity() {
         })
         updateUI()
     }
-    
+
     private fun lockCameraStandard() {
         // 1. Try Hardware Lock (Legacy)
         var hardwareLockSuccess = false
@@ -571,7 +573,7 @@ class MainActivity : AppCompatActivity() {
         // 2. Start Software Lock (Service) - Always start this as backup/primary
         try {
             val serviceIntent = Intent(this, CameraBlockerService::class.java)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
             } else {
                 startService(serviceIntent)
@@ -580,10 +582,10 @@ class MainActivity : AppCompatActivity() {
             Log.e(TAG, "Failed to start blocker service", e)
         }
     }
-    
+
     private fun lockCameraMiui14Plus() {
         Log.d(TAG, "Using MIUI 14+ specific camera locking approach")
-        
+
         // 1. Try Hardware Lock (may not work but try anyway)
         try {
             deviceAdminManager.lockCamera()
@@ -597,40 +599,40 @@ class MainActivity : AppCompatActivity() {
             val serviceIntent = Intent(this, CameraBlockerService::class.java)
             serviceIntent.putExtra("IS_MIUI_14_PLUS", true)
             serviceIntent.putExtra("USE_AGGRESSIVE_BLOCKING", true)
-            
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
             } else {
                 startService(serviceIntent)
             }
-            
+
             Log.d(TAG, "MIUI 14+: Enhanced blocker service started")
         } catch (e: Exception) {
             Log.e(TAG, "MIUI 14+: Failed to start enhanced blocker service", e)
         }
-        
+
         // 3. Additional MIUI 14+ specific setup
         setupMiui14PlusBlocking()
     }
-    
+
     private fun isMiuiDevice(): Boolean {
         return try {
-            val manufacturer = android.os.Build.MANUFACTURER.lowercase()
-            val brand = android.os.Build.BRAND.lowercase()
-            
-            manufacturer.contains("xiaomi") || 
+            val manufacturer = Build.MANUFACTURER.lowercase()
+            val brand = Build.BRAND.lowercase()
+
+            manufacturer.contains("xiaomi") ||
             manufacturer.contains("redmi") ||
-            brand.contains("xiaomi") || 
+            brand.contains("xiaomi") ||
             brand.contains("redmi") ||
             brand.contains("mi")
         } catch (e: Exception) {
             false
         }
     }
-    
+
     private fun setupMiui14PlusBlocking() {
         Log.d(TAG, "Setting up MIUI 14+ specific blocking mechanisms")
-        
+
         try {
             // Request additional permissions that might help with MIUI 14+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -638,7 +640,7 @@ class MainActivity : AppCompatActivity() {
                 if (!hasUsageStatsPermission()) {
                     Log.w(TAG, "MIUI 14+: Usage stats permission not granted - blocking may be less effective")
                 }
-                
+
                 // Log MIUI version for debugging
                 try {
                     val miuiVersion = Class.forName("android.os.SystemProperties")
