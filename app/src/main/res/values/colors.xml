@@ -14,7 +14,12 @@
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>
     <color name="text_white">#FFFFFF</color>
-    
+    <color name="parent_bg">#101622</color>
+    <color name="splash_bg_one">#0b1f47</color>
+    <color name="splash_bg_two">#071025</color>
+    <color name="btn_blue">#135BEC</color>
+    <color name="btn_disabled">#7CA0EA</color>
+
     <!-- UI Elements -->
     <color name="card_background">#FFFFFF</color>
     <color name="divider">#BDBDBD</color>

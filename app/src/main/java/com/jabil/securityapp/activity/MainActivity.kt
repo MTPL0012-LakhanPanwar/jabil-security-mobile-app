@@ -12,9 +12,6 @@ import android.os.Process
 import android.provider.Settings
 import android.util.Log
 import android.view.View
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -30,6 +27,7 @@ import com.jabil.securityapp.api.models.DeviceInfo
 import com.jabil.securityapp.api.models.ScanEntryRequest
 import com.jabil.securityapp.api.models.ScanExitRequest
 import com.jabil.securityapp.camera.AnyOrientationCaptureActivity
+import com.jabil.securityapp.databinding.ActivityMainBinding
 import com.jabil.securityapp.manager.DeviceAdminManager
 import com.jabil.securityapp.utils.Constants
 import com.jabil.securityapp.utils.DeviceUtils
@@ -44,12 +42,8 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "MainActivity"
     }
 
-    // UI Components
-    private lateinit var tvStatus: TextView
-    private lateinit var tvStatusMessage: TextView
-    private lateinit var ivStatusIcon: ImageView
-    private lateinit var btnScanEntry: Button
-    private lateinit var btnScanExit: Button
+    // ViewBinding
+    private lateinit var binding: ActivityMainBinding
 
     // Managers
     private lateinit var deviceAdminManager: DeviceAdminManager
@@ -66,13 +60,15 @@ class MainActivity : AppCompatActivity() {
         // Switch back to normal theme from splash theme
         setTheme(R.style.Theme_CameraLockDemo)
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         // Initialize managers
         deviceAdminManager = DeviceAdminManager(this)
         prefsManager = PrefsManager(this)
 
         // Restore state if needed
+/*
         if (prefsManager.isLocked) {
             // Ensure service is running if it should be locked
             val serviceIntent = Intent(this, CameraBlockerService::class.java)
@@ -82,22 +78,22 @@ class MainActivity : AppCompatActivity() {
                 startService(serviceIntent)
             }
         }
+*/
 
         // Initialize UI
-        initializeViews()
         setupClickListeners()
 
         // Update UI
-        updateUI()
+        //updateUI()
 
         // Check permissions (Camera, Overlay, Usage, Xiaomi)
         // We do this silently first (or setup listeners), but for this requirement we want to prepare the app.
         // Calling checkPreScanPermissions() here will trigger dialogs if missing.
         // That is acceptable as per "ask before QR code".
         // However, to avoid spamming on rotation, we might want to check if it's a fresh start.
-        if (savedInstanceState == null) {
-            checkAndRequestNextPermission()
-        }
+//        if (savedInstanceState == null) {
+//            checkAndRequestNextPermission()
+//        }
     }
 
     private fun showSettingsRedirectDialog(message: String) {
@@ -179,17 +175,10 @@ class MainActivity : AppCompatActivity() {
     }
     // ==================== UI Initialization ====================
 
-    private fun initializeViews() {
-        tvStatus = findViewById(R.id.tvStatus)
-        tvStatusMessage = findViewById(R.id.tvStatusMessage)
-        ivStatusIcon = findViewById(R.id.ivStatusIcon)
-        btnScanEntry = findViewById(R.id.btnScanEntry)
-        btnScanExit = findViewById(R.id.btnScanExit)
-    }
-
     private fun setupClickListeners() {
-        btnScanEntry.setOnClickListener {
-            val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+        binding.btnScanEntry.setOnClickListener {
+            startActivity(Intent(this, ScanActivity::class.java))
+            /*val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
 
             if (cameraPermission == PackageManager.PERMISSION_GRANTED) {
                 // Only proceed if ALL other setup is also done
@@ -206,9 +195,9 @@ class MainActivity : AppCompatActivity() {
                     // THIS BREAKS THE LOOP by showing a dialog instead of launching an intent.
                     showSettingsRedirectDialog("Camera permission is required to scan QR codes. Please enable it in Settings.")
                 }
-            }
+            }*/
         }
-        btnScanExit.setOnClickListener {
+        binding.btnScanExit.setOnClickListener {
             // Temporarily unlock camera to allow scanning
             if (deviceAdminManager.isCameraLocked()) {
                 deviceAdminManager.unlockCamera()
@@ -233,32 +222,32 @@ class MainActivity : AppCompatActivity() {
 
         // Colors
         val colorLocked = ContextCompat.getColor(this, R.color.state_locked)
-        val colorUnlocked = ContextCompat.getColor(this, R.color.state_unlocked)
+        val colorUnlocked = ContextCompat.getColor(this, R.color.btn_blue)
 
         if (isLocked) {
             // LOCKED STATE
-            tvStatus.text = "LOCKED"
-            tvStatus.setTextColor(colorLocked)
-            ivStatusIcon.setColorFilter(colorLocked)
-            ivStatusIcon.setImageResource(R.drawable.ic_camera_off)
-            tvStatusMessage.text = if (isServiceLocked && !isHardwareLocked) {
+            binding.tvStatus.text = "LOCKED"
+            binding.tvStatus.setTextColor(colorLocked)
+            binding.ivStatusIcon.setColorFilter(colorLocked)
+            binding.ivStatusIcon.setImageResource(R.drawable.ic_camera_off)
+            /*binding.tvStatusMessage.text = if (isServiceLocked && !isHardwareLocked) {
                 getString(R.string.info_camera_locked) + "\n(Service Mode Active)"
             } else {
                 getString(R.string.info_camera_locked)
-            }
+            }*/
 
-            btnScanEntry.visibility = View.GONE
-            btnScanExit.visibility = View.VISIBLE
+            binding.btnScanEntry.visibility = View.GONE
+            binding.btnScanExit.visibility = View.VISIBLE
         } else {
             // UNLOCKED STATE
-            tvStatus.text = "UNLOCKED"
-            tvStatus.setTextColor(colorUnlocked)
-            ivStatusIcon.setColorFilter(colorUnlocked)
-            ivStatusIcon.setImageResource(R.drawable.ic_camera_on)
-            tvStatusMessage.text = getString(R.string.info_camera_unlocked)
+            binding.tvStatus.text = "UNLOCKED"
+            binding.tvStatus.setTextColor(colorUnlocked)
+            binding.ivStatusIcon.setColorFilter(colorUnlocked)
+            binding.ivStatusIcon.setImageResource(R.drawable.icon_lock)
+            //binding.tvStatusMessage.text = getString(R.string.info_camera_unlocked)
 
-            btnScanEntry.visibility = View.VISIBLE
-            btnScanExit.visibility = View.GONE
+            binding.btnScanEntry.visibility = View.VISIBLE
+            binding.btnScanExit.visibility = View.GONE
         }
 
         // Debug info if needed
@@ -356,7 +345,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateUI()
+        //updateUI()
 
         if (isWaitingForPermission) {
             isWaitingForPermission = false
@@ -494,10 +483,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private fun setLoading(isLoading: Boolean) {
-        btnScanEntry.isEnabled = !isLoading
-        btnScanExit.isEnabled = !isLoading
+        binding.btnScanEntry.isEnabled = !isLoading
+        binding.btnScanExit.isEnabled = !isLoading
         if (isLoading) {
-            tvStatusMessage.text = "Processing..."
+            //binding.tvStatusMessage.text = "Processing..."
         } else {
             // Restore status text based on current state
             updateUI()
@@ -621,10 +610,10 @@ class MainActivity : AppCompatActivity() {
             val brand = Build.BRAND.lowercase()
 
             manufacturer.contains("xiaomi") ||
-            manufacturer.contains("redmi") ||
-            brand.contains("xiaomi") ||
-            brand.contains("redmi") ||
-            brand.contains("mi")
+                    manufacturer.contains("redmi") ||
+                    brand.contains("xiaomi") ||
+                    brand.contains("redmi") ||
+                    brand.contains("mi")
         } catch (e: Exception) {
             false
         }

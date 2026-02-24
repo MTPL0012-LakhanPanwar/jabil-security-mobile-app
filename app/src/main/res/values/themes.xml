@@ -18,6 +18,9 @@
         <!-- Background -->
         <item name="android:windowBackground">@color/brand_background</item>
     </style>
+    <style name="SwitchActivatedColor">
+        <item name="colorControlActivated">#1E61EB</item>
+    </style>
 
     <!-- Splash Screen Theme -->
     <style name="Theme.App.Starting" parent="Theme.MaterialComponents.Light.NoActionBar">
