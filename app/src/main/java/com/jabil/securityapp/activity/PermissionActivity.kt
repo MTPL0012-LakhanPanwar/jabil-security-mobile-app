@@ -62,6 +62,7 @@ class PermissionActivity : AppCompatActivity() {
         binding.btnContinue.setOnClickListener {
             if (allPermissionsGranted()) {
                 startActivity(Intent(this, MainActivity::class.java))
+                finish()
             } else {
                 val pendingPermissions = getPendingPermissionsList()
                 Toast.makeText(this, "Please grant $pendingPermissions permission(s)", Toast.LENGTH_SHORT).show()

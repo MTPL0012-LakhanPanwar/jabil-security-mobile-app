@@ -71,11 +71,21 @@ class ScanActivity : AppCompatActivity() {
             finish()
         }
 
+        // Get scan action from intent
+        val action = intent.getStringExtra("SCAN_ACTION")
+        currentScanAction = when (action) {
+            "ENTRY" -> ScanAction.ENTRY
+            "EXIT" -> ScanAction.EXIT
+            else -> ScanAction.NONE
+        }
+
         setupBarcodeScanner()
         startScanningLineAnimation()
+
     }
 
     private fun setupBarcodeScanner() {
+        binding.zxingBarcodeScanner.viewFinder.setMaskColor(android.graphics.Color.TRANSPARENT)
         binding.zxingBarcodeScanner.decodeContinuous(object : BarcodeCallback {
             override fun barcodeResult(result: BarcodeResult) {
                 if (result.text != null && result.text != lastScanResult) {
@@ -131,6 +141,9 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun handleScanResult(qrContent: String) {
+        // Show loading state
+        setLoading(true)
+
         lifecycleScope.launch {
             try {
                 when (currentScanAction) {
@@ -142,6 +155,7 @@ class ScanActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 handleApiError(e)
             } finally {
+                setLoading(false)
                 currentScanAction = ScanAction.NONE
                 lastScanResult = null
                 updateUI()
@@ -164,12 +178,12 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun showErrorDialog(message: String) {
-        AlertDialog.Builder(this)
-            .setTitle("Error")
-            .setMessage(message)
-            .setPositiveButton("OK", null)
-            .setIcon(android.R.drawable.ic_dialog_alert)
-            .show()
+        Toast.makeText(this, "Something went wrong!", Toast.LENGTH_LONG).show()
+    }
+
+    private fun setLoading(isLoading: Boolean) {
+        // Disable buttons during loading if needed
+        binding.btnBack.isEnabled = !isLoading
     }
 
     private fun isServiceRunning(): Boolean {
@@ -224,27 +238,24 @@ class ScanActivity : AppCompatActivity() {
         stopService(Intent(this, CameraBlockerService::class.java))
 
         if (deviceAdminManager.unlockCamera()) {
-            if (deviceAdminManager.removeDeviceAdmin()) {
-                showSuccessDialog("Camera Unlocked", Constants.SUCCESS_CAMERA_UNLOCKED)
-            } else {
-                showSuccessDialog("Camera Unlocked", "You are checked out. Please manually remove device admin permission if prompted.")
-            }
-            updateUI()
-        } else {
-            showSuccessDialog("Camera Unlocked", Constants.SUCCESS_CAMERA_UNLOCKED)
-            updateUI()
+            deviceAdminManager.removeDeviceAdmin()
         }
+
+        val intent = Intent(this, PermissionRestoreActivity::class.java).apply {
+            // These flags clear the entire task stack and make this the new root
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
         finish()
     }
 
-    private fun showSuccessDialog(title: String, message: String) {
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("OK") { _, _ -> finish() }
-            .setIcon(R.drawable.logo_jabil)
-            .setCancelable(false)
-            .show()
+    private fun startCamDisabledActivity() {
+        val intent = Intent(this, CameraDisabledActivity::class.java).apply {
+            // These flags clear the entire task stack and make this the new root
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish()
     }
 
     private suspend fun processEntryScan(token: String) {
@@ -309,11 +320,7 @@ class ScanActivity : AppCompatActivity() {
             lockCameraStandard()
         }
 
-        showSuccessDialog("Camera Locked", if (isMiui14Plus) {
-            Constants.SUCCESS_CAMERA_LOCKED + "\n(Active via MIUI 14+ Enhanced Blocking)"
-        } else {
-            Constants.SUCCESS_CAMERA_LOCKED + "\n(Active via Service & Admin)"
-        })
+        startCamDisabledActivity()
         updateUI()
     }
 

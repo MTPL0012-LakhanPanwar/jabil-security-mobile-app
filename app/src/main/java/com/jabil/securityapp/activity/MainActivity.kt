@@ -177,7 +177,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.btnScanEntry.setOnClickListener {
-            startActivity(Intent(this, ScanActivity::class.java))
+            val intent = Intent(this, ScanActivity::class.java)
+            intent.putExtra("SCAN_ACTION", "ENTRY")
+            startActivity(intent)
             /*val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
 
             if (cameraPermission == PackageManager.PERMISSION_GRANTED) {

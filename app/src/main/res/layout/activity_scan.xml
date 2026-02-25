@@ -11,7 +11,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:zxing_preview_scaling_strategy="centerCrop"
-        app:zxing_use_texture_view="true" />
+        app:zxing_use_texture_view="true"
+        app:zxing_framing_rect_width="280dp"
+        app:zxing_framing_rect_height="280dp" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"

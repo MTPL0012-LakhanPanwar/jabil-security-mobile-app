@@ -11,6 +11,7 @@ import com.jabil.securityapp.databinding.ActivityCameraDisabledBinding
 
 class CameraDisabledActivity : AppCompatActivity() {
     private lateinit var binding : ActivityCameraDisabledBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -21,8 +22,12 @@ class CameraDisabledActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        
         binding.btnScanEntry.setOnClickListener {
-            startActivity(Intent(this, PermissionRestoreActivity::class.java))
+            // Start ScanActivity with EXIT action to scan exit QR
+            val intent = Intent(this, ScanActivity::class.java)
+            intent.putExtra("SCAN_ACTION", "EXIT")
+            startActivity(intent)
         }
     }
 }
