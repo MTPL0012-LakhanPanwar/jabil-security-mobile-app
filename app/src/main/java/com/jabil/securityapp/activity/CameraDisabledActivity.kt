@@ -24,7 +24,6 @@ class CameraDisabledActivity : AppCompatActivity() {
         }
         
         binding.btnScanEntry.setOnClickListener {
-            // Start ScanActivity with EXIT action to scan exit QR
             val intent = Intent(this, ScanActivity::class.java)
             intent.putExtra("SCAN_ACTION", "EXIT")
             startActivity(intent)

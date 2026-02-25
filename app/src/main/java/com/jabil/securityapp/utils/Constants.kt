@@ -7,7 +7,7 @@ object Constants {
     // IMPORTANT: Change this to your backend server IP address
     // For emulator: use 10.0.2.2 (this points to localhost on your computer)
     // For physical device: use your computer's IP address (e.g., 192.168.1.100)
-    const val BASE_URL = "https://jabil-security-app.onrender.com/api/" // Updated to match backend port 5000
+    const val BASE_URL = "https://4f82-59-184-169-69.ngrok-free.app/api/" // Updated to match backend port 5000
     
     // Alternative for physical device (uncomment and set your IP):
     // const val BASE_URL = "https://c4a7b87907ca.ngrok-free.app/api/"

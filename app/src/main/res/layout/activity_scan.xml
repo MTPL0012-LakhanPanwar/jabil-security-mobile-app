@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/main"
     android:background="#0B101F">
 
     <com.journeyapps.barcodescanner.CompoundBarcodeView
         android:id="@+id/zxing_barcode_scanner"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:zxing_preview_scaling_strategy="centerCrop"
-        app:zxing_use_texture_view="true"
+        app:zxing_framing_rect_height="280dp"
         app:zxing_framing_rect_width="280dp"
-        app:zxing_framing_rect_height="280dp" />
+        app:zxing_preview_scaling_strategy="centerCrop"
+        app:zxing_use_texture_view="true" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -36,14 +36,15 @@
             android:layout_margin="16dp"
             android:src="@drawable/ic_help_two"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:letterSpacing="0.1"
             android:text="SCAN QR"
             android:textColor="#FFFFFF"
-            android:letterSpacing="0.1"
+            android:textSize="22sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="@id/btnBack"
             app:layout_constraintEnd_toEndOf="parent"
@@ -55,7 +56,7 @@
             android:layout_width="280dp"
             android:layout_height="280dp"
             android:background="@drawable/bg_qr_frame"
-            app:layout_constraintBottom_toTopOf="@id/tvInstruction"
+            app:layout_constraintBottom_toTopOf="@id/clContent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/btnBack" />
@@ -66,34 +67,47 @@
             android:layout_height="2dp"
             android:layout_marginTop="10dp"
             android:background="@color/btn_blue"
-            app:layout_constraintStart_toStartOf="@id/viewFinder"
             app:layout_constraintEnd_toEndOf="@id/viewFinder"
+            app:layout_constraintStart_toStartOf="@id/viewFinder"
             app:layout_constraintTop_toTopOf="@id/viewFinder" />
 
-        <TextView
-            android:id="@+id/tvInstruction"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="100dp"
-            android:text="Align QR code within frame"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
 
-        <TextView
-            android:layout_width="0dp"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/clContent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:layout_marginHorizontal="40dp"
-            android:gravity="center"
-            android:text="Hold your device steady. The scanner will capture the code automatically."
-            android:textColor="#8A92A6"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvInstruction" />
+            android:background="@drawable/bg_top_rounded"
+            android:paddingVertical="14dp"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <TextView
+                android:id="@+id/tvInstruction"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="100dp"
+                android:text="Align QR code within frame"
+                android:textColor="#8A92A6"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="40dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
+                android:gravity="center"
+                android:text="Hold your device steady. The scanner will capture the code automatically."
+                android:textColor="#8A92A6"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvInstruction" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

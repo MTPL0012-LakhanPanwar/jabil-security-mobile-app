@@ -63,10 +63,6 @@ class ScanActivity : AppCompatActivity() {
         prefsManager = PrefsManager(this)
         beepManager = BeepManager(this)
 
-        binding.btnHelp.setOnClickListener {
-            startActivity(Intent(this, CameraDisabledActivity::class.java))
-        }
-
         binding.btnBack.setOnClickListener {
             finish()
         }
@@ -86,6 +82,7 @@ class ScanActivity : AppCompatActivity() {
 
     private fun setupBarcodeScanner() {
         binding.zxingBarcodeScanner.viewFinder.setMaskColor(android.graphics.Color.TRANSPARENT)
+        binding.zxingBarcodeScanner.setStatusText("")
         binding.zxingBarcodeScanner.decodeContinuous(object : BarcodeCallback {
             override fun barcodeResult(result: BarcodeResult) {
                 if (result.text != null && result.text != lastScanResult) {

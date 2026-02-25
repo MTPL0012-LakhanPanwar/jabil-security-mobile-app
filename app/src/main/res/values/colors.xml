@@ -9,7 +9,8 @@
     <color name="state_locked">#D32F2F</color> <!-- Red -->
     <color name="state_unlocked">#388E3C</color> <!-- Green -->
     <color name="state_warning">#FFA000</color> <!-- Amber -->
-    
+    <color name="standard_gray">#D3D3D3</color> <!-- Gray -->
+
     <!-- Text Colors -->
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>

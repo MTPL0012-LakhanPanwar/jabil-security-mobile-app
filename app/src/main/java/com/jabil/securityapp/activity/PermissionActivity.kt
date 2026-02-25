@@ -229,16 +229,23 @@ class PermissionActivity : AppCompatActivity() {
         settingsLauncher.launch(intent)
     }
 
-    private fun requestBatteryOptimizationPermission() {
-        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-            data = Uri.fromParts("package", packageName, null)
-        }
-        settingsLauncher.launch(intent)
-    }
-
     override fun onResume() {
         super.onResume()
         updateAllSwitches()
         updateContinueButton()
+    }
+
+    private fun requestBatteryOptimizationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val intent = Intent(
+                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:$packageName")
+                )
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Into Exception", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
