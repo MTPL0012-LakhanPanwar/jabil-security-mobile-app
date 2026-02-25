@@ -21,13 +21,12 @@ class PermissionRestoreActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         deviceAdminManager = DeviceAdminManager(this)
+        // Deactivate device admin
+        if (deviceAdminManager.isDeviceAdminActive()) {
+            deviceAdminManager.removeDeviceAdmin()
+        }
 
         binding.btnContinue.setOnClickListener {
-            // Deactivate device admin
-            if (deviceAdminManager.isDeviceAdminActive()) {
-                deviceAdminManager.removeDeviceAdmin()
-            }
-
             // Navigate to MainActivity
             startActivity(Intent(this, MainActivity::class.java))
             finish()

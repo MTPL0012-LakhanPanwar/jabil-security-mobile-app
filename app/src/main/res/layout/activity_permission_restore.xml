@@ -80,7 +80,7 @@
         android:textColor="@color/white"
         android:textSize="18sp"
         android:textStyle="bold"
-        app:cornerRadius="12dp"
+        app:cornerRadius="24dp"
         app:iconGravity="textEnd"
         app:iconPadding="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
