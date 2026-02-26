@@ -22,11 +22,6 @@ class BootReceiver : BroadcastReceiver() {
                 } else {
                     context.startService(serviceIntent)
                 }
-
-                // Optionally start the BlockedActivity immediately if we want to be aggressive
-                // but usually the service will pick it up when a camera app is opened.
-                // However, for "Gatekeeper" style, we might want to launch the main app or a lock screen.
-                // For now, let the service handle the monitoring.
             }
         }
     }

@@ -114,15 +114,6 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/lblSession" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="AM Today"
-                    android:textColor="#4A5266"
-                    android:textSize="11sp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/tvEntryTime" />
-
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
 
@@ -225,7 +216,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="This device is currently under restricted policy management. Camera hardware access is blocked at the system level."
+            android:text="- This device is currently under restricted policy management. Camera hardware access is blocked at the system level. \n \n- Please finalize your exit scan to deactivate Managed Device Security and restore your camera access."
             android:textColor="#8A92A6"
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"

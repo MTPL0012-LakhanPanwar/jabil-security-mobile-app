@@ -1,11 +1,13 @@
 package com.jabil.securityapp.activity
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.jabil.securityapp.CameraBlockerService
 import com.jabil.securityapp.R
 import com.jabil.securityapp.databinding.ActivityCameraDisabledBinding
 import com.jabil.securityapp.utils.PrefsManager
@@ -40,5 +42,11 @@ class CameraDisabledActivity : AppCompatActivity() {
 
     private fun initFields() {
         binding.tvEntryTime.text = getTimeFormat(this, prefsManager.entryTime)
+        val serviceIntent = Intent(this, CameraBlockerService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
+        }
     }
 }

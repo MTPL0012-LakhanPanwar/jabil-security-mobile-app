@@ -3,11 +3,16 @@ package com.jabil.securityapp.activity
 import android.Manifest
 import android.app.ActivityManager
 import android.app.AppOpsManager
+import android.app.admin.DeviceAdminReceiver
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
@@ -35,6 +40,7 @@ import com.jabil.securityapp.utils.PrefsManager
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import kotlin.jvm.java
 
 class MainActivity : AppCompatActivity() {
 
@@ -62,7 +68,22 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val adminComponent = ComponentName(this, DeviceAdminReceiver::class.java)
 
+        try {
+            if (dpm.isDeviceOwnerApp(packageName)) {
+                // This makes your app "Un-killable" by the user.
+                // The "Force Stop" button will be greyed out, and
+                // "Clear All" will fail to terminate your service.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    dpm.setUserControlDisabledPackages(adminComponent, arrayListOf(packageName))
+                }
+                Log.d("MDM", "User control disabled for $packageName")
+            }
+        } catch (e: Exception) {
+            Log.e("MDM", "Failed to disable user control", e)
+        }
         // Initialize managers
         deviceAdminManager = DeviceAdminManager(this)
         prefsManager = PrefsManager(this)
@@ -82,20 +103,22 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize UI
         setupClickListeners()
-
+        requestBatteryOptimizationExemption()
         // Update UI
         //updateUI()
-
-        // Check permissions (Camera, Overlay, Usage, Xiaomi)
-        // We do this silently first (or setup listeners), but for this requirement we want to prepare the app.
-        // Calling checkPreScanPermissions() here will trigger dialogs if missing.
-        // That is acceptable as per "ask before QR code".
-        // However, to avoid spamming on rotation, we might want to check if it's a fresh start.
-//        if (savedInstanceState == null) {
-//            checkAndRequestNextPermission()
-//        }
     }
-
+    fun requestBatteryOptimizationExemption() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent()
+            val packageName = packageName
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                intent.action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                intent.data = android.net.Uri.parse("package:$packageName")
+                startActivity(intent)
+            }
+        }
+    }
     private fun showSettingsRedirectDialog(message: String) {
         AlertDialog.Builder(this)
             .setTitle("Permission Required")
@@ -180,24 +203,6 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, ScanActivity::class.java)
             intent.putExtra("SCAN_ACTION", "ENTRY")
             startActivity(intent)
-            /*val cameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-
-            if (cameraPermission == PackageManager.PERMISSION_GRANTED) {
-                // Only proceed if ALL other setup is also done
-                if (checkAndRequestNextPermission()) {
-                    currentScanAction = ScanAction.ENTRY
-                    startQRScan()
-                }
-            } else {
-                // Camera is missing. Check if we should show rationale or go to settings.
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
-                    showCameraRationaleDialog()
-                } else {
-                    // User likely checked "Don't ask again" or denied twice.
-                    // THIS BREAKS THE LOOP by showing a dialog instead of launching an intent.
-                    showSettingsRedirectDialog("Camera permission is required to scan QR codes. Please enable it in Settings.")
-                }
-            }*/
         }
         binding.btnScanExit.setOnClickListener {
             // Temporarily unlock camera to allow scanning

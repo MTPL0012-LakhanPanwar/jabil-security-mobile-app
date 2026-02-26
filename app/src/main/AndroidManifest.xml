@@ -77,8 +77,7 @@
             android:name=".CameraBlockerService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="specialUse|camera"
-            android:process=":camera_blocker_process">
+            android:foregroundServiceType="specialUse|camera">
             <property
                 android:name="android.app.property.FOREGROUND_SERVICE_TYPE"
                 android:value="specialUse|camera" />
