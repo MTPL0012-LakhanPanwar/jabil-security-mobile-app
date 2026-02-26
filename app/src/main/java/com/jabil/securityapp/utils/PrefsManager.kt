@@ -17,6 +17,10 @@ class PrefsManager(context: Context) {
         get() = prefs.getBoolean(KEY_IS_LOCKED, false)
         set(value) = prefs.edit().putBoolean(KEY_IS_LOCKED, value).apply()
 
+    var entryTime : Long
+        get() = prefs.getLong("entry_time", 0)
+        set(value) = prefs.edit().putLong("entry_time", value).apply()
+
     var isOverlayPermit : Boolean
         get() = prefs.getBoolean("overlay_permit",false)
         set(value) = prefs.edit().putBoolean("overlay_permit",value).apply()

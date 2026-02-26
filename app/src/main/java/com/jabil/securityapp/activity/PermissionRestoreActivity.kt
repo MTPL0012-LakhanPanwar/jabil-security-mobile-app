@@ -31,8 +31,5 @@ class PermissionRestoreActivity : AppCompatActivity() {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
         }
-        binding.btnBack.setOnClickListener {
-            finish()
-        }
     }
 }

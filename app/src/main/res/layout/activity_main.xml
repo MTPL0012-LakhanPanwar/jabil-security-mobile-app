@@ -7,6 +7,16 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_radiating_glow">
 
+
+    <ImageView
+        android:id="@+id/btnHelp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_help_two"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@+id/brandGroup"
         android:layout_width="match_parent"

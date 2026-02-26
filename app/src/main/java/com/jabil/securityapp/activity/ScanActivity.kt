@@ -148,14 +148,12 @@ class ScanActivity : AppCompatActivity() {
                     ScanAction.EXIT -> processExitScan(qrContent)
                     else -> {}
                 }
-                updateUI()
             } catch (e: Exception) {
                 handleApiError(e)
             } finally {
                 setLoading(false)
                 currentScanAction = ScanAction.NONE
                 lastScanResult = null
-                updateUI()
             }
         }
     }
@@ -170,7 +168,6 @@ class ScanActivity : AppCompatActivity() {
 
         if (currentScanAction == ScanAction.EXIT) {
             deviceAdminManager.lockCamera()
-            updateUI()
         }
     }
 
@@ -199,18 +196,6 @@ class ScanActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateUI() {
-        val isHardwareLocked = deviceAdminManager.isCameraLocked()
-        val isServiceLocked = isServiceRunning()
-        val isPersistentlyLocked = prefsManager.isLocked
-
-        val isLocked = isHardwareLocked || isServiceLocked || isPersistentlyLocked
-        val isAdmin = deviceAdminManager.isDeviceAdminActive()
-
-        val colorLocked = ContextCompat.getColor(this, R.color.state_locked)
-        val colorUnlocked = ContextCompat.getColor(this, R.color.btn_blue)
-    }
-
     private suspend fun processExitScan(token: String) {
         val deviceId = DeviceUtils.getDeviceId(this)
 
@@ -226,7 +211,6 @@ class ScanActivity : AppCompatActivity() {
         } else {
             showErrorDialog(response.body()?.message ?: "Exit failed. Please try again.")
             deviceAdminManager.lockCamera()
-            updateUI()
         }
     }
 
@@ -307,6 +291,7 @@ class ScanActivity : AppCompatActivity() {
 
     private fun lockCamera() {
         prefsManager.isLocked = true
+        prefsManager.entryTime = System.currentTimeMillis()
         val isMiui14Plus = isMiuiDevice() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 
         Log.d(javaClass.name, "Locking camera - MIUI 14+: $isMiui14Plus")
@@ -318,7 +303,6 @@ class ScanActivity : AppCompatActivity() {
         }
 
         startCamDisabledActivity()
-        updateUI()
     }
 
     private fun lockCameraStandard() {

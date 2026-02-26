@@ -23,16 +23,6 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_help"
-        android:layout_margin="15dp"
-        app:layout_constraintBottom_toBottomOf="@id/tvToolbarTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/tvToolbarTitle"
-        app:tint="#8A92A6" />
-
-    <ImageView
         android:id="@+id/ivCamDisable"
         android:layout_width="60dp"
         android:layout_height="60dp"
@@ -113,11 +103,11 @@
                     app:tint="#2D354E" />
 
                 <TextView
-                    android:id="@+id/valTime"
+                    android:id="@+id/tvEntryTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="09:42"
+                    tools:text="09:42"
                     android:textColor="#FFFFFF"
                     android:textSize="22sp"
                     android:textStyle="bold"
@@ -131,7 +121,7 @@
                     android:textColor="#4A5266"
                     android:textSize="11sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/valTime" />
+                    app:layout_constraintTop_toBottomOf="@id/tvEntryTime" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>

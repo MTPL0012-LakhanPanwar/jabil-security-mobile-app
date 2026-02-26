@@ -210,7 +210,9 @@ class MainActivity : AppCompatActivity() {
                 startQRScan()
             }
         }
-
+        binding.btnHelp.setOnClickListener {
+            startActivity(Intent(this, HelpActivity::class.java))
+        }
     }
 
     private fun updateUI() {
