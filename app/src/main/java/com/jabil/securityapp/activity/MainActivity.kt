@@ -23,6 +23,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.zxing.integration.android.IntentIntegrator
 import com.jabil.securityapp.CameraBlockerService
@@ -88,25 +90,18 @@ class MainActivity : AppCompatActivity() {
         deviceAdminManager = DeviceAdminManager(this)
         prefsManager = PrefsManager(this)
 
-        // Restore state if needed
-/*
-        if (prefsManager.isLocked) {
-            // Ensure service is running if it should be locked
-            val serviceIntent = Intent(this, CameraBlockerService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent)
-            } else {
-                startService(serviceIntent)
-            }
-        }
-*/
-
-        // Initialize UI
+        setupWindowInsets()
         setupClickListeners()
         requestBatteryOptimizationExemption()
-        // Update UI
-        //updateUI()
     }
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+    }
+
     fun requestBatteryOptimizationExemption() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val intent = Intent()
@@ -215,9 +210,12 @@ class MainActivity : AppCompatActivity() {
                 startQRScan()
             }
         }
-        binding.btnHelp.setOnClickListener {
+        binding.iToolbar.btnHelp.setOnClickListener {
             startActivity(Intent(this, HelpActivity::class.java))
         }
+        binding.iToolbar.btnHelp.visibility = View.VISIBLE
+        binding.iToolbar.btnBack.visibility = View.GONE
+        binding.iToolbar.toolbarTitle.visibility = View.GONE
     }
 
     private fun updateUI() {

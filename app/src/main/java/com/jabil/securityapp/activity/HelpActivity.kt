@@ -30,8 +30,9 @@ class HelpActivity : AppCompatActivity() {
     }
     
     private fun setupClickListeners() {
-        binding.btnBack.setOnClickListener {
-            finish()
+        binding.iToolbar.toolbarTitle.text = "Help & Guide"
+        binding.iToolbar.btnBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
         }
     }
 }

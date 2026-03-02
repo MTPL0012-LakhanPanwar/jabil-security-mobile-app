@@ -62,11 +62,10 @@ class ScanActivity : AppCompatActivity() {
         deviceAdminManager = DeviceAdminManager(this)
         prefsManager = PrefsManager(this)
         beepManager = BeepManager(this)
-
-        binding.btnBack.setOnClickListener {
-            finish()
+        binding.iToolbar.toolbarTitle.text = "SCAN QR"
+        binding.iToolbar.btnBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
         }
-
         // Get scan action from intent
         val action = intent.getStringExtra("SCAN_ACTION")
         currentScanAction = when (action) {
@@ -138,9 +137,6 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun handleScanResult(qrContent: String) {
-        // Show loading state
-        setLoading(true)
-
         lifecycleScope.launch {
             try {
                 when (currentScanAction) {
@@ -151,7 +147,6 @@ class ScanActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 handleApiError(e)
             } finally {
-                setLoading(false)
                 currentScanAction = ScanAction.NONE
                 lastScanResult = null
             }
@@ -173,11 +168,6 @@ class ScanActivity : AppCompatActivity() {
 
     private fun showErrorDialog(message: String) {
         Toast.makeText(this, "Something went wrong!", Toast.LENGTH_LONG).show()
-    }
-
-    private fun setLoading(isLoading: Boolean) {
-        // Disable buttons during loading if needed
-        binding.btnBack.isEnabled = !isLoading
     }
 
     private fun isServiceRunning(): Boolean {

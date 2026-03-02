@@ -16,7 +16,8 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:paddingBottom="10dp">
 
             <ImageView
                 android:id="@+id/iconHeader"
@@ -48,6 +49,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:gravity="center"
+                android:layout_marginHorizontal="18dp"
                 android:text="To ensure high-security standards, we need the following access to your device."
                 android:textColor="#8A92A6"
                 android:textSize="14sp"
@@ -318,7 +320,7 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_marginHorizontal="14dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="18dp"
         android:backgroundTint="@color/btn_disabled"
         android:text="Continue"
         android:textAllCaps="false"

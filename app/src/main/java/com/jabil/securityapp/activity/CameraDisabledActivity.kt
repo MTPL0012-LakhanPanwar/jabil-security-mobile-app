@@ -3,6 +3,7 @@ package com.jabil.securityapp.activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -42,6 +43,8 @@ class CameraDisabledActivity : AppCompatActivity() {
     }
 
     private fun initFields() {
+        binding.iToolbar.toolbarTitle.text = "Active Session"
+        binding.iToolbar.btnBack.visibility = View.GONE
         binding.tvEntryTime.text = getTimeFormat(this, prefsManager.entryTime)
         if (DeviceUtils.isTargetedXiaomiVersion()) {
             // Apply the "Lock" to prevent 'Clear All' button access
