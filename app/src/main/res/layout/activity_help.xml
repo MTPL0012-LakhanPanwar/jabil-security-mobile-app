@@ -36,7 +36,6 @@
                     android:layout_height="48dp"
                     android:src="@drawable/ic_back_two"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp"
                     android:contentDescription="Back" />
 
                 <TextView

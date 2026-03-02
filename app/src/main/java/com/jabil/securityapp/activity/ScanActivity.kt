@@ -403,6 +403,7 @@ class ScanActivity : AppCompatActivity() {
             if (resultCode == RESULT_OK || deviceAdminManager.isDeviceAdminActive()) {
                 lockCamera()
             } else {
+                finish()
                 Toast.makeText(this, "Device admin permission denied", Toast.LENGTH_SHORT).show()
             }
             return
