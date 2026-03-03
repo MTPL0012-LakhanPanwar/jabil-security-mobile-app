@@ -1,9 +1,12 @@
 package com.jabil.securityapp.activity
 
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -34,12 +37,36 @@ class CameraDisabledActivity : AppCompatActivity() {
         initClickListeners()
     }
 
+    fun isKioskModeActive(): Boolean {
+        val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // Returns LOCK_TASK_MODE_LOCKED (Device Owner)
+            // or LOCK_TASK_MODE_PINNED (Standard App/Screen Pinning)
+            val state = activityManager.lockTaskModeState
+            state != ActivityManager.LOCK_TASK_MODE_NONE
+        } else {
+            // Deprecated but still works for older devices
+            activityManager.isInLockTaskMode
+        }
+    }
+
     private fun initClickListeners() {
         binding.btnScanEntry.setOnClickListener {
             val intent = Intent(this, ScanActivity::class.java)
             intent.putExtra("SCAN_ACTION", "EXIT")
             startActivity(intent)
         }
+
+        // This back press dispatcher is implemented for suppressed the toast message,
+        // which is displayed when user press back while kiosk mode is activated
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (!isKioskModeActive()) {
+                    finish()
+                }
+            }
+        })
     }
 
     private fun initFields() {
